@@ -126,6 +126,16 @@ tbody tr:last-child td{border-bottom:0}
 .rk{width:30px;height:30px;border-radius:9px;display:inline-grid;place-items:center;font-family:Prompt;font-weight:600;background:var(--surface-2);color:var(--text-secondary)}
 .rk.r1{background:var(--gold);color:#fff}.rk.r2{background:var(--silver);color:#fff}.rk.r3{background:var(--bronze);color:#fff}
 .who{display:flex;flex-direction:column}
+.person{display:flex;align-items:center;gap:10px}
+.av{width:36px;height:36px;border-radius:50%;flex:none;object-fit:cover;background:var(--surface-2);display:inline-grid;place-items:center;font-family:Prompt;font-weight:600;font-size:14px;color:var(--text-secondary);border:1px solid var(--line);overflow:hidden}
+.av.lg{width:72px;height:72px;font-size:24px}
+.av.xl{width:88px;height:88px;font-size:28px}
+.pod .avwrap{position:relative;width:max-content;margin:0 auto 8px}
+.pod .avwrap .medal{position:absolute;right:-6px;bottom:-4px;width:28px;height:28px;font-size:13px;margin:0;border:2px solid var(--surface-1)}
+.pod.p1 .avwrap .medal{width:32px;height:32px;font-size:15px}
+.pod.p1 .av{border:3px solid var(--gold)}.pod.p2 .av{border:3px solid var(--silver)}.pod.p3 .av{border:3px solid var(--bronze)}
+.photo-cell{display:flex;align-items:center;gap:6px}
+.photo-cell .av{width:34px;height:34px;font-size:12px}
 .who b{font-weight:600}
 .who small{color:var(--text-muted);font-size:11.5px}
 .scorecell{display:flex;align-items:center;gap:10px;justify-content:flex-end}
@@ -213,7 +223,7 @@ textarea{width:100%;border:1px solid var(--line-2);background:var(--surface-1);c
 
   <div class="bar">
     <div class="seg" id="quick">
-      <button data-q="all" class="on">ทั้งงวด</button>
+      <button data-q="all" class="on">ทั้งเดือน</button>
       <button data-q="7">7 วันล่าสุด</button>
       <button data-q="1">วันล่าสุด</button>
     </div>
@@ -226,7 +236,7 @@ textarea{width:100%;border:1px solid var(--line-2);background:var(--surface-1);c
   <div class="grid2">
     <section class="card sec">
       <div class="sechead">
-        <div><h2>🏆 Top 3 ประจำงวด</h2><div class="hint">คลิกชื่อเพื่อดูรายละเอียดรายวัน</div></div>
+        <div><h2>🏆 Top 3 · <span id="periodName">ทั้งเดือน</span></h2><div class="hint">คลิกชื่อเพื่อดูรายละเอียดรายวัน</div></div>
       </div>
       <div class="podium" id="podium"></div>
       <div id="watch"></div>
@@ -289,14 +299,14 @@ textarea{width:100%;border:1px solid var(--line-2);background:var(--surface-1);c
   <header><h3>ตั้งค่าเป้าหมายและรายชื่อ</h3><button class="x" data-close>×</button></header>
   <div class="body">
     <div class="form">
-      <div class="field"><label>เป้า 3RD ต่อคน (บาท / งวด)</label><input type="number" id="sTarget" step="0.01"><div class="help">ไฟล์เดิม: 5,577,391 ÷ 14 คน</div></div>
+      <div class="field"><label>เป้า 3RD ต่อคน (บาท / เดือน)</label><input type="number" id="sTarget" step="0.01"><div class="help">ไฟล์เดิม: 5,577,391 ÷ 14 คน · ถ้าเลือก 7 วัน/วันล่าสุด ระบบจะเฉลี่ยเป้าตามจำนวนวันของเดือนให้อัตโนมัติ</div></div>
       <div class="field"><label>เป้า ATT (Cover Plus ÷ iPhone) %</label><input type="number" id="sAtt" step="1"></div>
       <div class="field"><label>น้ำหนักคะแนน ATT</label><input type="number" id="sAttW" step="1"></div>
       <div class="field"><label>น้ำหนักคะแนน FC% 3RD</label><input type="number" id="sFcW" step="1"></div>
     </div>
     <div class="formula" id="formulaTxt"></div>
     <div class="h4">รายชื่อพนักงานที่จัดอันดับ</div>
-    <table class="stafftbl"><thead><tr><th>สาขา</th><th>รหัส</th><th>ตำแหน่ง</th><th>ชื่อ</th><th></th></tr></thead><tbody id="staffBody"></tbody></table>
+    <table class="stafftbl"><thead><tr><th>รูป</th><th>สาขา</th><th>รหัส</th><th>ตำแหน่ง</th><th>ชื่อ</th><th></th></tr></thead><tbody id="staffBody"></tbody></table>
     <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap">
       <button class="btn sm" id="addStaff">+ เพิ่มพนักงาน</button>
       <select class="btn sm" id="addFromData"><option value="">+ เพิ่มจากรายชื่อในข้อมูล…</option></select>
@@ -340,6 +350,9 @@ const $ = s => document.querySelector(s);
 const fmt = (n,d=0) => (n||0).toLocaleString('th-TH',{minimumFractionDigits:d,maximumFractionDigits:d});
 const pct = (n,d=1) => fmt((n||0)*100,d)+'%';
 const esc = s => String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+function photoUrl(p){ return p&&p.photo ? '/api/photo?id='+encodeURIComponent(p.id)+'&v='+p.photo : null; }
+function initials(n){ n=String(n||'').trim(); return n? [...n.replace(/^(นาย|นางสาว|นาง|น\.ส\.)/,'')][0] : '?'; }
+function avatar(p,cls=''){ const u=photoUrl(p); return u? `<img class="av ${cls}" src="${u}" alt="" loading="lazy" onerror="this.outerHTML='<span class=\'av ${cls}\'>${esc(initials(p.name))}</span>'">` : `<span class="av ${cls}">${esc(initials(p.name))}</span>`; }
 const TH_M = ['ม.ค.','ก.พ.','มี.ค.','เม.ย.','พ.ค.','มิ.ย.','ก.ค.','ส.ค.','ก.ย.','ต.ค.','พ.ย.','ธ.ค.'];
 const thDate = (iso,short) => { if(!iso) return ''; const [y,m,d]=iso.split('-').map(Number); return short? d+' '+TH_M[m-1] : d+' '+TH_M[m-1]+' '+(y+543); };
 function toast(msg){ const t=$('#toast'); t.textContent=msg; t.classList.add('on'); clearTimeout(t._h); t._h=setTimeout(()=>t.classList.remove('on'),2600); }
@@ -354,23 +367,36 @@ $('#themeBtn').onclick=()=>{ setTheme(document.documentElement.dataset.theme==='
 let range = {from:null,to:null,q:'all'};
 function allDates(){ const s=new Set(state.rows.map(r=>r[0])); return [...s].sort(); }
 function resetRange(){
-  const ds=allDates(); range.from=ds[0]||null; range.to=ds[ds.length-1]||null;
+  const ds=allDates(); const last=ds[ds.length-1]||null; range.to=last; range.from=last? last.slice(0,8)+'01' : null; range.q='all';
   $('#dFrom').value=range.from||''; $('#dTo').value=range.to||'';
 }
+function syncQuick(){ document.querySelectorAll('#quick button').forEach(x=>x.classList.toggle('on',x.dataset.q===range.q)); }
 function addDays(iso,n){ const d=new Date(iso+'T00:00:00Z'); d.setUTCDate(d.getUTCDate()+n); return d.toISOString().slice(0,10); }
 document.querySelectorAll('#quick button').forEach(b=>b.onclick=()=>{
   document.querySelectorAll('#quick button').forEach(x=>x.classList.toggle('on',x===b));
   const ds=allDates(); const last=ds[ds.length-1];
-  if(b.dataset.q==='all'){ range.from=ds[0]; range.to=last; }
+  range.q=b.dataset.q;
+  if(b.dataset.q==='all'){ range.to=last; range.from=last? last.slice(0,8)+'01' : null; }
   else { range.to=last; range.from=addDays(last,-(+b.dataset.q-1)); }
   $('#dFrom').value=range.from; $('#dTo').value=range.to; render();
 });
-['#dFrom','#dTo'].forEach(id=>$(id).onchange=()=>{ range.from=$('#dFrom').value; range.to=$('#dTo').value; document.querySelectorAll('#quick button').forEach(x=>x.classList.remove('on')); render(); });
+['#dFrom','#dTo'].forEach(id=>$(id).onchange=()=>{ range.from=$('#dFrom').value; range.to=$('#dTo').value; range.q='custom'; document.querySelectorAll('#quick button').forEach(x=>x.classList.remove('on')); render(); });
 
 /* ---------- compute (same logic as Sum sheet) ---------- */
 // row: [date, branch, officer, ipadU, iphoneU, smileU, rdU, rdSales, totalSales]
+const dim = iso => { const [y,m]=iso.split('-').map(Number); return new Date(Date.UTC(y,m,0)).getUTCDate(); };
+// share of the monthly target that applies to the selected range
+function targetFactor(){
+  if(!range.to) return 1;
+  if(range.q==='all') return 1;
+  let f=0, d=range.from||range.to, n=0;
+  while(d<=range.to && n<400){ f+=1/dim(d); d=addDays(d,1); n++; }
+  return f||1;
+}
+function periodLabel(){ return range.q==='all'?'ทั้งเดือน':range.q==='7'?'7 วันล่าสุด':range.q==='1'?'วันล่าสุด':'ช่วงที่เลือก'; }
+function periodTarget(){ return (state.settings.target||0)*targetFactor(); }
 function compute(){
-  const S=state.settings, goal=(S.attGoal||0.25), T=S.target||1;
+  const S=state.settings, goal=(S.attGoal||0.25), T=periodTarget()||1;
   const inR = d => (!range.from||d>=range.from)&&(!range.to||d<=range.to);
   const res = state.staff.map(p=>{
     const a={...p,ipad:0,iphone:0,smile:0,rdU:0,rdS:0,sales:0};
@@ -404,7 +430,7 @@ function render(){
   const n=R.length||1;
   const sum=k=>R.reduce((s,a)=>s+a[k],0);
   const avg=R.reduce((s,a)=>s+a.score,0)/n;
-  const iph=sum('iphone'), sm=sum('smile'), rdS=sum('rdS'), T=S.target*R.length;
+  const iph=sum('iphone'), sm=sum('smile'), rdS=sum('rdS'), PT=periodTarget(), T=PT*R.length;
   const storeAtt = iph? sm/iph:0, storeFc = T? rdS/T:0;
   const g=S.attGoal;
   // meta
@@ -413,7 +439,7 @@ function render(){
   const kp=[
     {l:'คะแนนเฉลี่ยร้าน',v:fmt(avg,1),u:'/ '+(S.attW+S.fcW),f:`พนักงาน ${R.length} คน`,m:avg/(S.attW+S.fcW)},
     {l:'ATT ร้าน (Cover+ ÷ iPhone)',v:pct(storeAtt),f:`เป้า ${pct(g,0)} · Cover+ ${fmt(sm)} / iPhone ${fmt(iph)}`,m:storeAtt/g,chip:storeAtt>=g?'g':storeAtt>=g*.8?'w':'b'},
-    {l:'ยอด 3RD รวม',v:fmt(rdS/1e6,2),u:'ล้านบาท',f:`FC ${pct(storeFc)} ของเป้า ${fmt(T/1e6,2)} ล้าน`,m:storeFc,o:1},
+    {l:'ยอด 3RD รวม',v:fmt(rdS/1e6,2),u:'ล้านบาท',f:`FC ${pct(storeFc)} · เป้า${periodLabel()} ${T>=1e6?fmt(T/1e6,2)+' ล้าน':fmt(T)+' บาท'}${range.q!=='all'?` (${fmt(PT)}/คน)`:''}`,m:storeFc,o:1},
     {l:'iPhone',v:fmt(iph),u:'เครื่อง',f:`3RD ${fmt(sum('rdU'))} ชิ้น`},
     {l:'iPad',v:fmt(sum('ipad')),u:'เครื่อง',f:`ยอดขายรวม ${fmt(sum('sales')/1e6,2)} ล้านบาท`},
   ];
@@ -421,9 +447,10 @@ function render(){
   // podium
   const top=[...R].sort((a,b)=>a.rank-b.rank||b.score-a.score);
   const order=[top[1],top[0],top[2]];
-  $('#podium').innerHTML=order.map((a,i)=>a?`<div class="pod p${[2,1,3][i]}" data-id="${a.id}"><div class="medal">${a.rank}</div><div class="nm">${esc(a.name)}</div><div class="sc num">${a.score}<small> คะแนน</small></div><div class="mini">ATT ${pct(a.att)} · FC ${pct(a.fc)}</div></div>`:'<div></div>').join('');
+  $('#podium').innerHTML=order.map((a,i)=>a?`<div class="pod p${[2,1,3][i]}" data-id="${a.id}"><div class="avwrap">${avatar(a,i===1?'xl':'lg')}<div class="medal">${a.rank}</div></div><div class="nm">${esc(a.name)}</div><div class="sc num">${a.score}<small> คะแนน</small></div><div class="mini">ATT ${pct(a.att)} · FC ${pct(a.fc)}</div></div>`:'<div></div>').join('');
   const low=top.filter(a=>a.att<g*0.6);
   $('#watch').innerHTML = low.length? `<div class="watch"><span>⚠</span><div><b>ควรติดตาม:</b> ${low.map(a=>esc(a.name)+' (ATT '+pct(a.att)+')').join(', ')} — ATT ต่ำกว่า 60% ของเป้า</div></div>`:'';
+  $('#periodName').textContent=periodLabel();
   $('#scoreHint').textContent=`ATT ถึงเป้า ${pct(g,0)} = ${S.attW} คะแนน · FC% ถึง 100% = ${S.fcW} คะแนน`;
   $('#attHint').textContent=`เส้นประ = เป้า ${pct(g,0)}`;
   scoreChart(top); table(R,{iph,sm,rdS,T,avg,storeAtt,storeFc,ipad:sum('ipad'),rdU:sum('rdU'),sales:sum('sales')}); dailyChart(); attChart(top);
@@ -462,7 +489,7 @@ function table(R,T){
   if(!rows.length) h+=`<tr><td colspan="10" class="empty">ไม่พบรายชื่อ</td></tr>`;
   rows.forEach(a=>{ h+=`<tr data-id="${a.id}">
     <td class="l"><span class="rk ${a.rank<=3?'r'+a.rank:''}">${a.rank}</span></td>
-    <td class="l"><div class="who"><b>${esc(a.name)}</b><small>${esc(a.id)} · ${esc(a.pos||'')}</small></div></td>
+    <td class="l"><div class="person">${avatar(a)}<div class="who"><b>${esc(a.name)}</b><small>${esc(a.id)} · ${esc(a.pos||'')}</small></div></div></td>
     <td><div class="scorecell"><div class="scorebar" title="ATT ${fmt(a.attPts,1)} + FC ${fmt(a.fcPts,1)}"><i class="a" style="width:${a.attPts/max*100}%"></i><i class="f" style="width:${a.fcPts/max*100}%"></i></div><span class="scorenum num">${a.score}</span></div></td>
     <td class="num">${fmt(a.ipad)}</td><td class="num">${fmt(a.iphone)}</td><td class="num">${fmt(a.smile)}</td>
     <td>${attChip(a.att)}</td><td class="num">${fmt(a.rdU)}</td><td class="num">${fmt(a.rdS)}</td>
@@ -528,11 +555,11 @@ function attChart(R){
 function openPerson(id){
   const R=compute(); const a=R.find(x=>x.id==id); if(!a) return;
   const S=state.settings;
-  $('#pTitle').innerHTML=`<span class="rk ${a.rank<=3?'r'+a.rank:''}" style="margin-right:8px">${a.rank}</span>${esc(a.name)} <span style="color:var(--text-muted);font-size:14px;font-weight:500">· ${a.id}</span>`;
-  const needRd=Math.max(0,S.target-a.rdS), needSm=a.iphone?Math.max(0,Math.ceil(a.iphone*S.attGoal-a.smile)):0;
+  $('#pTitle').innerHTML=`<span class="rk ${a.rank<=3?'r'+a.rank:''}" style="margin-right:8px">${a.rank}</span><span style="display:inline-block;vertical-align:middle;margin-right:10px">${avatar(a)}</span>${esc(a.name)} <span style="color:var(--text-muted);font-size:14px;font-weight:500">· ${a.id}</span>`;
+  const needRd=Math.max(0,periodTarget()-a.rdS), needSm=a.iphone?Math.max(0,Math.ceil(a.iphone*S.attGoal-a.smile)):0;
   const st=[['คะแนน',a.score+' / '+(S.attW+S.fcW)],['ATT',pct(a.att)],['FC% 3RD',pct(a.fc)],['ยอดขายรวม',fmt(a.sales)+' ฿'],
     ['iPhone',fmt(a.iphone)],['Cover Plus',fmt(a.smile)],['3RD',fmt(a.rdS)+' ฿'],['iPad',fmt(a.ipad)],
-    ['Cover+ ที่ขาดถึงเป้า',fmt(needSm)],['3RD ที่ขาดถึงเป้า',fmt(needRd)+' ฿']];
+    ['Cover+ ที่ขาดถึงเป้า',fmt(needSm)],['เป้า 3RD '+periodLabel(),fmt(periodTarget())+' ฿'],['3RD ที่ขาดถึงเป้า',fmt(needRd)+' ฿']];
   $('#pStats').innerHTML=st.map(s=>`<div class="dstat"><div class="l">${s[0]}</div><div class="v num">${s[1]}</div></div>`).join('');
   const m={};
   for(const r of state.rows){ if(r[2]!=a.id||r[1]!=a.branch) continue; if(range.from&&r[0]<range.from) continue; if(range.to&&r[0]>range.to) continue; const o=m[r[0]]||(m[r[0]]={d:r[0],rd:0,ip:0,sm:0}); o.rd+=r[7]; o.ip+=r[4]; o.sm+=r[5]; }
@@ -552,8 +579,10 @@ let draftStaff=[];
 function formulaText(){ const a=+$('#sAtt').value||25, w1=+$('#sAttW').value||0, w2=+$('#sFcW').value||0;
   $('#formulaTxt').innerHTML=`คะแนน = ROUND( MIN(ATT ÷ ${a}%, 1) × ${w1} + MIN(FC%, 1) × ${w2} ) · ATT = Cover Plus ÷ iPhone · FC% = ยอด 3RD ÷ เป้า`; }
 function staffRows(){
-  $('#staffBody').innerHTML=draftStaff.map((p,i)=>`<tr><td style="width:70px"><input data-i="${i}" data-f="branch" value="${esc(p.branch)}"></td><td style="width:90px"><input data-i="${i}" data-f="id" value="${esc(p.id)}"></td><td style="width:80px"><input data-i="${i}" data-f="pos" value="${esc(p.pos||'')}"></td><td><input data-i="${i}" data-f="name" value="${esc(p.name)}"></td><td style="width:40px"><button class="btn sm ghost" data-del="${i}" title="ลบ">✕</button></td></tr>`).join('');
-  $('#staffBody').querySelectorAll('input').forEach(inp=>inp.oninput=()=>{ const p=draftStaff[+inp.dataset.i]; const f=inp.dataset.f; p[f]=(f==='id'||f==='branch')?(+inp.value||inp.value):inp.value; });
+  $('#staffBody').innerHTML=draftStaff.map((p,i)=>`<tr><td style="width:118px"><div class="photo-cell">${avatar(p)}<label class="btn sm" title="อัปโหลดรูป">📷<input type="file" accept="image/*" hidden data-photo="${i}"></label>${p.photo?`<button class="btn sm ghost" data-unphoto="${i}" title="ลบรูป">✕</button>`:''}</div></td><td style="width:70px"><input data-i="${i}" data-f="branch" value="${esc(p.branch)}"></td><td style="width:90px"><input data-i="${i}" data-f="id" value="${esc(p.id)}"></td><td style="width:80px"><input data-i="${i}" data-f="pos" value="${esc(p.pos||'')}"></td><td><input data-i="${i}" data-f="name" value="${esc(p.name)}"></td><td style="width:40px"><button class="btn sm ghost" data-del="${i}" title="ลบ">✕</button></td></tr>`).join('');
+  $('#staffBody').querySelectorAll('input[data-f]').forEach(inp=>inp.oninput=()=>{ const p=draftStaff[+inp.dataset.i]; const f=inp.dataset.f; p[f]=(f==='id'||f==='branch')?(+inp.value||inp.value):inp.value; });
+  $('#staffBody').querySelectorAll('[data-photo]').forEach(inp=>inp.onchange=async()=>{ const f=inp.files[0]; if(f) await uploadPhoto(+inp.dataset.photo,f); });
+  $('#staffBody').querySelectorAll('[data-unphoto]').forEach(b=>b.onclick=async()=>{ await removePhoto(+b.dataset.unphoto); });
   $('#staffBody').querySelectorAll('[data-del]').forEach(b=>b.onclick=()=>{ draftStaff.splice(+b.dataset.del,1); staffRows(); });
   const have=new Set(draftStaff.map(p=>String(p.id)));
   const ids=[...new Set(state.rows.map(r=>r[2]))].filter(id=>!have.has(String(id))&&id>1);
@@ -642,11 +671,35 @@ async function processAoa(aoa, label, where){
     const merge=$('#mergeChk').checked; if(merge){ const nd=new Set(rows.map(r=>r[0])); rows=state.rows.filter(r=>!nd.has(r[0])).concat(rows).sort((x,y)=>x[0]<y[0]?-1:x[0]>y[0]?1:x[2]-y[2]); }
     state.rows=rows; state.names={...state.names,...names}; state.source=label; state.updatedAt=Date.now();
     state.map = (cKey>=0)? null : state.map;
-    resetRange(); document.querySelectorAll('#quick button').forEach(x=>x.classList.toggle('on',x.dataset.q==='all'));
+    resetRange(); syncQuick();
     render();
     const ds=allDates();
     const ok=await save();
     status('ok',`✓ อัปเดตสำเร็จ — อ่าน ${fmt(n)} รายการ (${esc(where)})${merge?' · รวมกับข้อมูลเดิม (แทนที่วันที่ซ้ำ)':''} ช่วง ${thDate(ds[0])} – ${thDate(ds[ds.length-1])}${bad?` · ข้ามแถวที่อ่านวันที่ไม่ได้ ${bad} แถว`:''}${ok?' · บันทึกขึ้นเซิร์ฟเวอร์แล้ว ทุกคนที่เปิดลิงก์จะเห็นข้อมูลนี้':' · <b>ยังไม่ได้บันทึกขึ้นเซิร์ฟเวอร์</b>'}`);
+}
+
+/* ---------- staff photos ---------- */
+function resizeImage(file,size=320){ return new Promise((res,rej)=>{ const img=new Image(); const u=URL.createObjectURL(file);
+  img.onload=()=>{ const s=Math.min(img.naturalWidth,img.naturalHeight); const sx=(img.naturalWidth-s)/2, sy=(img.naturalHeight-s)*0.35;
+    const c=document.createElement('canvas'); c.width=c.height=size; const g=c.getContext('2d'); g.drawImage(img,sx,Math.max(0,sy),s,s,0,0,size,size);
+    URL.revokeObjectURL(u); c.toBlob(b=>b?res(b):rej(new Error('แปลงรูปไม่สำเร็จ')),'image/jpeg',0.85); };
+  img.onerror=()=>{ URL.revokeObjectURL(u); rej(new Error('อ่านรูปไม่ได้')); }; img.src=u; }); }
+function syncPhotoToState(p){ const s=state.staff.find(x=>String(x.id)===String(p.id)); if(s){ if(p.photo) s.photo=p.photo; else delete s.photo; } }
+async function uploadPhoto(i,file){
+  const p=draftStaff[i]; if(!p||p.id===''){ toast('ใส่รหัสพนักงานก่อนอัปโหลดรูป'); return; }
+  if(!adminKey){ toast('ต้องเข้าสู่โหมดผู้ดูแลก่อน'); return; }
+  try{ toast('กำลังอัปโหลดรูป…'); const blob=await resizeImage(file);
+    const r=await fetch('/api/photo?id='+encodeURIComponent(p.id),{method:'POST',headers:{'content-type':'image/jpeg','x-admin-key':adminKey},body:blob});
+    if(!r.ok) throw new Error(r.status===401?'รหัสผู้ดูแลไม่ถูกต้อง':'เซิร์ฟเวอร์ตอบกลับ '+r.status);
+    p.photo=Date.now(); syncPhotoToState(p); staffRows(); render(); await save('อัปโหลดรูปของ '+p.name+' แล้ว');
+  }catch(e){ console.error(e); toast('อัปโหลดรูปไม่สำเร็จ: '+(e.message||e)); }
+}
+async function removePhoto(i){
+  const p=draftStaff[i]; if(!p) return;
+  try{ const r=await fetch('/api/photo?id='+encodeURIComponent(p.id),{method:'DELETE',headers:{'x-admin-key':adminKey||''}});
+    if(!r.ok&&r.status!==404) throw new Error('เซิร์ฟเวอร์ตอบกลับ '+r.status);
+    delete p.photo; syncPhotoToState(p); staffRows(); render(); await save('ลบรูปแล้ว');
+  }catch(e){ toast('ลบรูปไม่สำเร็จ: '+(e.message||e)); }
 }
 
 /* ---------- persistence (Netlify Function + Blobs) ---------- */
